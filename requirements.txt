@@ -61,6 +61,7 @@ typer-slim==0.21.1
 typing_extensions==4.15.0
 urllib3==2.6.3
 
+openai-whisper
 gradio
 fastapi==0.116.1
 uvicorn==0.35.0
