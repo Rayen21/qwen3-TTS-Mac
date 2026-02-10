@@ -5,6 +5,8 @@
 
 <img width="1547" height="1033" alt="image" src="https://github.com/user-attachments/assets/daff7a81-bdb5-4938-aa86-4e6021575187" />
 <img width="1547" height="1015" alt="image" src="https://github.com/user-attachments/assets/ee6e3948-a0aa-4974-b066-38e27c1bf629" />
+<img width="483" height="108" alt="image" src="https://github.com/user-attachments/assets/494787d7-07a1-4f50-b042-c112dd4d0a71" />
+
 
 
 
@@ -13,6 +15,8 @@
 https://github.com/kapi2800/qwen3-tts-apple-silicon?tab=readme-ov-file
 
 我基于这个作者的代码作了一个gradio的操作前端。
+
+clone项目到本地，使用conda建立环境使用即可
 
 **模型下载地址
 
