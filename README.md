@@ -3,9 +3,10 @@
 
 ***使用MLX模型，生成速度快，占用内存小，一键盘启动
 
-<img width="1547" height="1033" alt="image" src="https://github.com/user-attachments/assets/11e9ea15-0f02-4739-8f9e-46dc0f5e0f03" />
-<img width="1549" height="1015" alt="image" src="https://github.com/user-attachments/assets/8332cbc8-b3f2-4562-8e97-3be119624b74" />
-<img width="567" height="142" alt="image" src="https://github.com/user-attachments/assets/b638ed1c-a94b-4950-bfdb-833441fffa8a" />
+<img width="1547" height="1033" alt="image" src="https://github.com/user-attachments/assets/daff7a81-bdb5-4938-aa86-4e6021575187" />
+<img width="1547" height="1015" alt="image" src="https://github.com/user-attachments/assets/ee6e3948-a0aa-4974-b066-38e27c1bf629" />
+
+
 
 感谢这个作者写的主代码
 
