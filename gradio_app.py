@@ -2,6 +2,7 @@
 import gradio as gr
 import tts_core
 import random
+import traceback  # 导入追踪模块以获取详细错误
 
 # 配置数据
 SPEAKER_MAP = {
@@ -27,7 +28,7 @@ def switch_ui_mode(mode_label):
             gr.update(visible=(mode_label == "零样本克隆"))]
 
 def validated_tts(text, mode, lang, speaker, emotion, design_text, ref_audio, ref_text, seed):
-    """封装调用后端"""
+    """封装调用后端，增加错误捕获"""
     if not text or text.strip() == "":
         gr.Warning("⚠️ 文本为空")
         return None, -1
@@ -35,11 +36,18 @@ def validated_tts(text, mode, lang, speaker, emotion, design_text, ref_audio, re
     # 语言/角色/情感逻辑处理
     instruct = design_text if mode == "语音设计" else emotion
     
-    # 调用后端 Pro 逻辑
-    audio_path, used_seed = tts_core.tts_all_in_one(
-        text, speaker, instruct, 1.0, ref_audio, ref_text, seed
-    )
-    return audio_path, used_seed
+    try:
+        # 调用后端 Pro 逻辑
+        audio_path, used_seed = tts_core.tts_all_in_one(
+            text, speaker, instruct, 1.0, ref_audio, ref_text, seed
+        )
+        return audio_path, used_seed
+    except Exception as e:
+        # 获取详细的错误堆栈
+        error_msg = traceback.format_exc()
+        print(f"TTS Error Log:\n{error_msg}") # 控制台保留日志
+        # 在 GUI 界面弹出红色的错误提示框
+        raise gr.Error(f"生成失败: {str(e)}") 
 
 with gr.Blocks(title="Qwen3 Pro TTS") as demo:
     gr.Markdown("# 🎙️ Qwen3. NEURAL VOICE ENGINE (Pro 1.7B)")
@@ -85,7 +93,26 @@ with gr.Blocks(title="Qwen3 Pro TTS") as demo:
     # 事件绑定
     lang_sel.change(fn=update_speakers, inputs=lang_sel, outputs=spk_sel)
     mode_nav.change(fn=switch_ui_mode, inputs=mode_nav, outputs=[group_custom, group_design, group_clone])
-    ref_aud.change(fn=tts_core.transcribe_audio, inputs=ref_aud, outputs=ref_txt)
+    
+    # 同样为语音识别增加错误保护
+    def safe_transcribe(audio):
+        if audio is None:
+            return ""
+        try:
+     # 调用后端识别函数
+            text = tts_core.transcribe_audio(audio)
+            return text
+        except Exception as e:
+            print(f"STT Error: {e}")
+            gr.Warning(f"语音识别失败: {str(e)}")
+            return ""
+
+    # 确保绑定关系正确：输入是音频，输出是文本框
+    ref_aud.change(
+        fn=safe_transcribe, 
+        inputs=ref_aud, 
+        outputs=ref_txt
+    )
     
     gen_btn.click(
         fn=validated_tts,
@@ -94,4 +121,5 @@ with gr.Blocks(title="Qwen3 Pro TTS") as demo:
     )
 
 if __name__ == "__main__":
-    demo.launch(server_port=9860, theme=gr.themes.Soft())
+    # 使用 show_error=True 确保 Gradio 框架本身也会抛出错误到前端
+    demo.launch(server_port=9860, theme=gr.themes.Soft(), show_error=True)
