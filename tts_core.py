@@ -9,6 +9,7 @@ import gc
 import gradio as gr
 import mlx.core as mx
 import whisper
+_stt_model = None
 
 from mlx_audio.tts.utils import load_model
 from mlx_audio.tts.generate import generate_audio
@@ -57,13 +58,25 @@ def _get_model(model_key):
 
 def transcribe_audio(audio_path):
     """Whisper 自动识别"""
-    if not audio_path: return ""
+    global _stt_model
+    if not audio_path: 
+        return ""
     try:
-        stt_model = whisper.load_model("base")
-        result = stt_model.transcribe(audio_path, initial_prompt="以下是普通话。")
-        return result["text"].strip()
+        if _stt_model is None:
+            # 第一次加载可能会慢，因为需要下载模型 (约 140MB)
+            print("--- 正在初始化 Whisper (Base) 模型 ---")
+            _stt_model = whisper.load_model("base")
+        
+        print(f"--- 正在识别音频: {audio_path} ---")
+        result = _stt_model.transcribe(audio_path, initial_prompt="以下是普通话。")
+        text = result["text"].strip()
+        print(f"--- 识别结果: {text} ---")
+        return text
     except Exception as e:
-        return "【识别失败】"
+        # 这里会打印详细的错误到控制台
+        import traceback
+        print(f"STT Error Detail:\n{traceback.format_exc()}")
+        return f"【识别失败: {str(e)}】"
 
 def tts_all_in_one(text, speaker, emotion, speed, ref_audio, ref_text, seed=-1):
     """
