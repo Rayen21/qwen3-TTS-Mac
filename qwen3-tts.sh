@@ -5,7 +5,7 @@
 # ==============================
 CONDA_BASE="$HOME/miniforge3"
 CONDA_ENV="qwen3-tts"
-PROJECT_DIR="$HOME/qwen3-TTS-Mac"
+PROJECT_DIR="$HOME/qwen3-tts-mac"
 PORT=9860
 URL="http://127.0.0.1:${PORT}"
 
