@@ -1,11 +1,13 @@
 # qwen3-TTS-Mac
 ## qwen3-TTS适用于Mac的版本
 
-### 使用MLX模型，MPS加速生成速度快，占用内存小，一键启动（qwen3-tts.sh脚本）
+### 使用MLX模型，MPS加速，生成速度快，占用内存小，一键启动（qwen3-tts.sh脚本）
 
-<img width="1547" height="1033" alt="image" src="https://github.com/user-attachments/assets/daff7a81-bdb5-4938-aa86-4e6021575187" />
-<img width="1547" height="1015" alt="image" src="https://github.com/user-attachments/assets/ee6e3948-a0aa-4974-b066-38e27c1bf629" />
-<img width="483" height="108" alt="image" src="https://github.com/user-attachments/assets/494787d7-07a1-4f50-b042-c112dd4d0a71" />
+<img width="1024" height="435" alt="1" src="https://github.com/user-attachments/assets/94c36d11-b9c5-4e11-8235-38e5ef3be95d" />
+<img width="1024" height="435" alt="2" src="https://github.com/user-attachments/assets/e766c722-3b8a-47fa-8d02-c1b618545ddf" />
+<img width="1024" height="435" alt="3" src="https://github.com/user-attachments/assets/e5bd5b57-c182-4575-be80-031ffe14a65e" />
+<img width="293" height="264" alt="截屏2026-02-28 18 21 48" src="https://github.com/user-attachments/assets/aa9bb79e-4612-4bfb-8529-c0000e3a3582" />
+
 
 ## 安装注意事项简述：
 
@@ -21,13 +23,7 @@ conda install -c conda-forge ffmpeg
 
 5、qwen3-tts.sh的使用，请自行"chmod +x qwen3-tts.sh"在终端中赋予执行权限。
 
-6、本项目只是个人爱好改写自下面作者，并不会定期更新功能。
-
-## 感谢这个作者写的主代码
-
-https://github.com/kapi2800/qwen3-tts-apple-silicon?tab=readme-ov-file
-
-我只是基于这个作者的代码作了一个gradio的操作前端。
+6、本项目只是个人爱好，并不会定期更新功能。
 
 
 ### 模型下载地址 
