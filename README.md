@@ -47,7 +47,7 @@ VoiceDesign https://huggingface.co/mlx-community/Qwen3-TTS-12Hz-1.7B-VoiceDesign
 
 Base        https://huggingface.co/mlx-community/Qwen3-TTS-12Hz-1.7B-Base-8bit
 
-Lite Models (0.6B) - Faster, Less RAM ~~默认使用了1.7B的模型（合并代码为单文件版后已经是混合两种模型使用了260228)~~
+Lite Models (0.6B) - Faster, Less RAM ##默认使用了1.7B-8bit的模型(260228)## ~~合并代码为单文件版后已经是混合两种模型使用了~~
 
 CustomVoice https://huggingface.co/mlx-community/Qwen3-TTS-12Hz-0.6B-CustomVoice-8bit
 
