@@ -3,9 +3,18 @@
 
 ### 使用MLX模型，MPS加速，生成速度快，占用内存小，一键启动（qwen3-tts.sh脚本）
 
+##### #预设角色音频调用功能
 <img width="1024" height="435" alt="1" src="https://github.com/user-attachments/assets/94c36d11-b9c5-4e11-8235-38e5ef3be95d" />
+
+##### #自主语音设计功能
 <img width="1024" height="435" alt="2" src="https://github.com/user-attachments/assets/e766c722-3b8a-47fa-8d02-c1b618545ddf" />
+
+##### #零样本语音克隆功能
 <img width="1024" height="435" alt="3" src="https://github.com/user-attachments/assets/e5bd5b57-c182-4575-be80-031ffe14a65e" />
+
+##### #生成速度及资源占用
+
+
 <img width="293" height="264" alt="截屏2026-02-28 18 21 48" src="https://github.com/user-attachments/assets/aa9bb79e-4612-4bfb-8529-c0000e3a3582" />
 
 
