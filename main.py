@@ -50,8 +50,8 @@ os.makedirs(MODELS_DIR, exist_ok=True)
 
 # 模型映射 
 MODEL_MAP = {
-    #"Pro-Custom": "Qwen3-TTS-12Hz-1.7B-CustomVoice-8bit", #官方预设角色
-    "Pro-Custom": "Qwen3-TTS-12Hz-0.6B-CustomVoice-8bit",
+    "Pro-Custom": "Qwen3-TTS-12Hz-1.7B-CustomVoice-8bit", #官方预设角色
+    #"Pro-Custom": "Qwen3-TTS-12Hz-0.6B-CustomVoice-8bit",
     "Pro-Design": "Qwen3-TTS-12Hz-1.7B-VoiceDesign-bf16", #语音设计
     #"Pro-Clone": "Qwen3-TTS-12Hz-1.7B-Base",              #零样本克隆
     "Pro-Clone": "Qwen3-TTS-12Hz-1.7B-Base-8bit",
@@ -182,74 +182,95 @@ def _transcribe_audio(audio_path: str) -> str:
         print(f"⚠️ Whisper 识别或下载失败: {e}")
         return "【识别失败】"
 
+import scipy.io.wavfile as wavfile # 用于保存音频
+
 def _generate_tts(text: str, speaker: str, emotion: str, speed: float, 
-                  ref_audio: str, ref_text: str, seed: int, model_key: str):
-    """TTS 生成主逻辑 - 已优化以符合 mlx-audio 规范"""
+                  ref_audio: str, ref_text: str, seed: int, model_key: str, design_text: str = ""):
+    model = None
+    temp_dir = None
+    
     if not text or not text.strip():
         raise gr.Error("⚠️ 合成文本不能为空")
     
-    # 种子处理
-    actual_seed = int(seed) if (seed is not None and seed != -1) else random.randint(0, 2**32-1)
-    mx.random.seed(actual_seed)
-    random.seed(actual_seed)
-    np.random.seed(actual_seed)
-    
-    # 加载模型
-    model = _get_model(model_key)
-    temp_dir = tempfile.mkdtemp(prefix="qwen3_tts_")
-    
     try:
-        is_clone_mode = "Clone" in model_key
-        lang = _detect_language(text)
+        # 1. 初始化设置
+        actual_seed = int(seed) if (seed is not None and seed != -1) else random.randint(0, 2**32-1)
+        mx.random.seed(actual_seed)
+        random.seed(actual_seed)
+        np.random.seed(actual_seed)
         
-        # 规范化参数调用
-        gen_params = {
-            "model": model,
-            "text": text.strip(),
-            "instruct": emotion,
-            "speed": speed,
-            "output_path": temp_dir,
-            "language": lang
-        }
+        model = _get_model(model_key)
+        start_time = time.time()
+        
+        # 统一语言名称格式
+        raw_lang = _detect_language(text)
+        full_lang = "Chinese" if raw_lang == "zh" else "English"
 
-        if is_clone_mode and ref_audio:
-            # === 符合 mlx-audio 规范的克隆调用 ===
+        # 2. 分模式调用官方方法
+        results = []
+        
+        if model_key == "Pro-Clone":
+            # === 模式 A: 零样本克隆 (Base 模型) ===
             actual_ref_text = ref_text
             if not actual_ref_text or not actual_ref_text.strip():
-                print("🎤 自动识别参考音频...")
                 actual_ref_text = _transcribe_audio(ref_audio)
             
-            print(f"🧬 克隆模式: ref_audio={os.path.basename(ref_audio)}, lang={lang}")
-            gen_params.update({
-                "ref_audio": ref_audio,
-                "ref_text": actual_ref_text,
-                "voice": None  # 明确移除预设音色
-            })
+            print(f"🧬 执行克隆生成...")
+            results = list(model.generate(
+                text=text.strip(),
+                ref_audio=ref_audio,
+                ref_text=actual_ref_text,
+                language=full_lang # 注意：Base 模型有时也需要指定语言
+            ))
+
+        elif model_key == "Pro-Design":
+            # === 模式 B: 语音设计 (VoiceDesign 模型) ===
+            print(f"🎨 执行语音设计生成...")
+            results = list(model.generate_voice_design(
+                text=text.strip(),
+                language=full_lang,
+                instruct=design_text or "A natural clear voice."
+            ))
+
         else:
-            # === 标准角色模式调用 ===
-            voice_name = speaker.lower() if speaker else "vivian"
-            print(f"👤 角色模式: voice={voice_name}, lang={lang}")
-            gen_params.update({
-                "voice": voice_name,
-                "ref_audio": None,
-                "ref_text": None
-            })
+            # === 模式 C: 官方角色 (CustomVoice 模型) ===
+            print(f"👤 执行角色定制生成...")
+            results = list(model.generate_custom_voice(
+                text=text.strip(),
+                speaker=speaker, # 传入 Vivian 等
+                language=full_lang,
+                instruct=emotion # 传入 Sad/Happy 等
+            ))
+
+        # 3. 性能统计与音频处理
+        if not results or not hasattr(results[0], 'audio'):
+            raise Exception("模型未返回有效的音频数据")
+
+        end_time = time.time()
+        elapsed = end_time - start_time
         
-        # 执行生成
-        generate_audio(**gen_params)
+        audio_data = np.array(results[0].audio)
+        duration = len(audio_data) / 24000 # 假设采样率为 24k
         
-        # 复制输出文件
-        src = os.path.join(temp_dir, "audio_000.wav")
-        final_path = os.path.join(tempfile.gettempdir(), f"qwen3_pro_{int(time.time())}.wav")
-        shutil.copy(src, final_path)
+        # 打印你想要的性能日志
+        print("\n" + "="*20)
+        print(f"Duration:          {duration:.2f}s")
+        print(f"Processing Time:   {elapsed:.2f}s")
+        print(f"Real-time Factor:  {duration/elapsed:.2f}x")
+        print(f"Peak Memory:       {mx.metal.get_peak_memory() / 1024**3:.2f}GB")
+        print("="*20 + "\n")
+
+        # 4. 保存文件
+        final_path = os.path.join(tempfile.gettempdir(), f"qwen3_output_{int(time.time())}.wav")
+        wavfile.write(final_path, 24000, audio_data)
+        
         return final_path, actual_seed
 
     except Exception as e:
         import traceback
         traceback.print_exc()
-        raise gr.Error(f"Pro 模型合成失败: {e}")
+        raise gr.Error(f"合成失败: {str(e)}")
     finally:
-        if os.path.exists(temp_dir): shutil.rmtree(temp_dir)
         _clear_mps_cache()
 
 # === 5. Gradio UI 构建 ===
@@ -349,10 +370,11 @@ with gr.Blocks(title="Qwen3-TTS Pro") as demo:
     
     # 🔧 关键修复: 只绑定一次，使用全局 _current_mode 传递 model_key
     gen_btn.click(
-        fn=lambda t, spk, emo, spd, ra, rt, sd: _generate_tts(
-            t, spk, emo, spd, ra, rt, sd, _current_mode
+        fn=lambda t, spk, emo, spd, ra, rt, sd, dt: _generate_tts(
+            t, spk, emo, spd, ra, rt, sd, _current_mode, dt
         ),
-        inputs=[text_input, spk_sel, emo_sel, speed_sel, ref_aud, ref_txt, seed_input],
+        # 注意这里新增了 design_input
+        inputs=[text_input, spk_sel, emo_sel, speed_sel, ref_aud, ref_txt, seed_input, design_input],
         outputs=[out_aud, res_seed],
         show_progress="full"
     )
