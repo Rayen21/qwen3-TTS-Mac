@@ -355,7 +355,7 @@ with gr.Blocks(title="Qwen3-TTS Pro") as demo:
             
             gr.HTML("""
                 <div style="text-align:center;margin-top:20px;color:#666;font-size:12px">
-                    MPS Accelerated | Auto Memory Cleanup | 
+                    MPS Accelerated | Auto Memory Cleanup | Rayen21
                     <a href="https://github.com/Rayen21/qwen3-TTS-Mac" target="_blank">GitHub</a>
                 </div>
             """)
