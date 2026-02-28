@@ -4,8 +4,8 @@
 # 配置区
 # ==============================
 CONDA_BASE="$HOME/miniforge3"
-CONDA_ENV="qwen3-tts"
-PROJECT_DIR="$HOME/qwen3-tts-mac"
+CONDA_ENV="qwen3-tts" #根据自己实际的环境名修改
+PROJECT_DIR="$HOME/qwen3-tts-mac" #根据自己实际项目放置目录修改
 PORT=9860
 URL="http://127.0.0.1:${PORT}"
 
