@@ -34,6 +34,12 @@ conda install -c conda-forge ffmpeg
 
 6、本项目只是个人爱好，并不会定期更新功能。
 
+### 感谢这个作者写的主代码，我在他的基础上修改而来
+
+https://github.com/kapi2800/qwen3-tts-apple-silicon?tab=readme-ov-file
+
+
+
 
 ### 模型下载地址 
 
