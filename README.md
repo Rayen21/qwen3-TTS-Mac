@@ -23,6 +23,27 @@
 <img width="1529" height="981" alt="image" src="https://github.com/user-attachments/assets/baa8b652-6bed-4a3f-89fe-28e0a1ba6128" />
 
 ### 运行日志
+
+```
+✅ 模型加载完成 (0.6s)
+🔍 [Pro-Design] 模式自动语种识别：检测到 'ko' (Korean)
+
+🎯 生成参数检查:
+   • mode: Pro-Design
+   • speed: 1.0 (类型：float)
+   • full_lang: Korean
+   • lang_code: ko
+   • text 长度：292 chars
+   • seed: 3828344949
+🎨 执行语音设计生成 (Seed: 3828344949, Lang: Korean)...
+   • ✅ 语音设计生成完成
+====================
+Duration:          43.36s
+Processing Time:   15.99s
+Real-time Factor:  2.71x
+Peak Memory:       9.06GB
+====================
+```
 ```
 🔍 [Pro-Clone] 模式自动语种识别：检测到 'zh' (Chinese)
 
