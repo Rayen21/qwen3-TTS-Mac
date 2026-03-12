@@ -1,13 +1,14 @@
-# qwen3-TTS-Mac
-## qwen3-TTS适用于Mac的版本
+<h1 align="center"> Qwen3-TTS适用于Mac的版本 </h1>
 
 ### 使用mlx-community模型，MPS加速，生成速度快，占用内存小，一键启动（qwen3-tts.sh脚本）
 
 ### 20260311功能更新：
 1、美化UI界面（抛弃gradio使用index）
 
-2、零样本克隆和语音设计页，根据输入文本正确进行多语种识别："Chinese":"zh""English":"en","Japanese":"ja","Korean":"ko"，"French":"fr","German":"de","Spanish":"es","RuSsian":"ru","Portuguese":"pt","Italian":"it"
-
+2、零样本克隆和语音设计页，根据输入文本正确进行多语种识别：
+```
+"Chinese":"zh""English":"en","Japanese":"ja","Korean":"ko"，"French":"fr","German":"de","Spanish":"es","RuSsian":"ru","Portuguese":"pt","Italian":"it"
+```
 3、对长句进行了分段拆分，避免零样本克隆时，长句生成音频会导致语速越来越快的问题。
 
 4、语速调节功能测试下来没有效果，在代码里已经给隐藏了（3中已经解决了生成长句的语速越来越快问题，所有个人觉的也没必要加语速控制了）
