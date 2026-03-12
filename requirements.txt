@@ -1,0 +1,18 @@
+# --- 核心框架 ---
+numpy>=1.24.0
+scipy>=1.10.0
+
+# --- Web 服务 ---
+fastapi>=0.104.0
+uvicorn>=0.24.0
+python-multipart>=0.0.6
+
+# --- HuggingFace ---
+huggingface_hub>=0.19.0
+
+# --- Apple MLX 框架 (MPS 加速) ---
+mlx>=0.11.0
+mlx-audio>=0.2.0
+
+# --- 语音识别 (Whisper) ---
+mlx-whisper>=0.2.0

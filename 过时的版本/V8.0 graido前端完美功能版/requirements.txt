@@ -1,0 +1,6 @@
+mlx-audio
+gradio
+dumpy
+soundfile
+sounddevice
+mlx_whisper

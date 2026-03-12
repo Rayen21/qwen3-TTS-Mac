@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qwen3-TTS (MPS Optimized)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #F5F5F7; color: #1D1D1F; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            border: 1px solid white;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.05);
+        }
+        .btn-gradient {
+            background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+            transition: all 0.3s ease;
+        }
+        .btn-gradient:hover {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+        .btn-gradient:active { transform: translateY(0) scale(0.98); }
+        .mode-btn.active {
+            background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+            color: white;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #2563eb;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8 font-sans">
+    <div class="max-w-6xl mx-auto space-y-6">
+        
+        <!-- 顶部标题 -->
+        <div class="flex items-center justify-between px-4">
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight">Qwen3-TTS <span class="text-slate-400 font-light">(MPS Optimized)</span></h1>
+                <p class="text-[10px] font-bold text-blue-500 uppercase tracking-widest mt-1">
+                    <span class="inline-block w-2 h-2 rounded-full bg-blue-500 animate-pulse mr-1"></span>
+                    Apple MPS Engine Active
+                </p>
+            </div>
+            <div class="text-right hidden md:block">
+                <span class="text-xs text-slate-400 font-medium">Local Inference Mode</span>
+            </div>
+        </div>
+
+        <!-- 模式选择 (顶部三个主功能板块) -->
+        <div class="glass-card p-4 rounded-2xl">
+            <div class="flex space-x-2 justify-center">
+                <button onclick="switchMode('Pro-Custom')" id="mode-custom" class="mode-btn active px-6 py-2 rounded-xl text-sm font-medium transition-all">
+                    <i class="fa-solid fa-user mr-2"></i>官方角色
+                </button>
+                <button onclick="switchMode('Pro-Design')" id="mode-design" class="mode-btn px-6 py-2 rounded-xl text-sm font-medium transition-all">
+                    <i class="fa-solid fa-wand-magic-sparkles mr-2"></i>语音设计
+                </button>
+                <button onclick="switchMode('Pro-Clone')" id="mode-clone" class="mode-btn px-6 py-2 rounded-xl text-sm font-medium transition-all">
+                    <i class="fa-solid fa-microphone-lines mr-2"></i>零样本克隆
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- 左侧：控制面板 -->
+            <div class="glass-card p-8 rounded-[2rem] space-y-6">
+                <h2 class="text-sm font-bold text-slate-800 flex items-center">
+                    <i class="fa-solid fa-sliders mr-2 text-blue-500"></i> 合成参数配置
+                </h2>
+                
+                <!-- 模式 1: 官方角色 -->
+                <div id="tab-custom" class="tab-content active space-y-4">
+                    <div>
+                        <label class="block text-[11px] font-black text-[#86868B] uppercase ml-1 mb-2">语言</label>
+                        <select id="language" class="w-full bg-[#F5F5F7] border-none rounded-xl p-3 text-sm focus:ring-1 focus:ring-blue-500" onchange="updateSpeakers()">
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-black text-[#86868B] uppercase ml-1 mb-2">角色</label>
+                        <select id="speaker" class="w-full bg-[#F5F5F7] border-none rounded-xl p-3 text-sm focus:ring-1 focus:ring-blue-500">
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-black text-[#86868B] uppercase ml-1 mb-2">情感描述</label>
+                        <textarea id="emotion" class="w-full bg-[#F5F5F7] border-none rounded-xl p-4 text-sm focus:ring-1 focus:ring-blue-500" 
+                                  rows="3" placeholder="例：用开心的语气说 / 低沉缓慢地讲述 / 带着悲伤的情绪..."></textarea>
+                    </div>
+                    
+                </div>
+
+                <!-- 模式 2: 语音设计 -->
+                <div id="tab-design" class="tab-content space-y-4">
+                    <div>
+                        <label class="block text-[11px] font-black text-[#86868B] uppercase ml-1 mb-2">声音描述</label>
+                        <textarea id="designText" class="w-full bg-[#F5F5F7] border-none rounded-xl p-4 text-sm focus:ring-1 focus:ring-blue-500" 
+                                  rows="4" placeholder="例：磁性男声，略带沙哑，语速缓慢..."></textarea>
+                    </div>
+                </div>
+
+                <!-- 模式 3: 零样本克隆 -->
+                <div id="tab-clone" class="tab-content space-y-4">
+                    <div id="dropZone" class="group relative border-2 border-dashed border-[#D2D2D7] hover:border-blue-500 rounded-2xl p-6 transition-all bg-[#FBFBFD] text-center">
+                        <input type="file" id="refFile" accept=".wav,.mp3,.m4a" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                        <div class="space-y-2">
+                            <i class="fa-solid fa-cloud-arrow-up text-2xl text-[#D2D2D7] group-hover:text-blue-500"></i>
+                            <p class="text-sm font-medium text-slate-600" id="fileNameDisplay">点击或拖拽参考音频到这里</p>
+                        </div>
+                        <div id="refPlayerContainer" class="hidden mt-4 pt-4 border-t border-[#F5F5F7]">
+                            <p class="text-[10px] font-bold text-[#86868B] uppercase mb-2">参考音预览</p>
+                            <audio id="refAudioPlayer" controls class="w-full h-8"></audio>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-black text-[#86868B] uppercase ml-1 mb-2">参考文本 (自动识别/可修正)</label>
+                        <textarea id="refText" class="w-full bg-[#F5F5F7] border-none rounded-xl p-4 text-sm focus:ring-1 focus:ring-blue-500" rows="3" placeholder="上传音频后自动识别..."></textarea>
+                    </div>
+                </div>
+                 <!-- 语速滑杆 -->
+                <div id="speedControl">
+                        <label class="block text-[11px] font-black text-[#86868B] uppercase ml-1 mb-2">语速：<span id="speedValue">1.0</span>x</label>
+                        <input type="range" id="speed" min="0.5" max="2.0" step="0.1" value="1.0" 
+                               class="w-full h-2 bg-[#E5E5EA] rounded-lg appearance-none" 
+                               oninput="document.getElementById('speedValue').innerText = this.value">
+                </div>
+                <!-- 随机种子 -->
+                <div>
+                    <label class="block text-[11px] font-black text-[#86868B] uppercase ml-1 mb-2">种子</label>
+                    <div class="flex space-x-2">
+                        <input type="number" id="seed" value="-1" class="flex-1 bg-[#F5F5F7] border-none rounded-xl p-3 text-sm focus:ring-1 focus:ring-blue-500">
+                        <button onclick="randomizeSeed()" class="px-4 py-3 bg-[#E5E5EA] hover:bg-[#D2D2D7] rounded-xl text-sm font-medium transition-all">
+                            <i class="fa-solid fa-shuffle mr-1"></i>随机种子
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧：文本输入与输出 -->
+            <div class="glass-card p-8 rounded-[2rem] flex flex-col justify-between">
+                <div class="space-y-6">
+                    <h2 class="text-sm font-bold text-slate-800 flex items-center">
+                        <i class="fa-solid fa-font mr-2 text-blue-500"></i> 合成内容成果
+                    </h2>
+                    <div>
+                        <label class="block text-[11px] font-black text-[#86868B] uppercase ml-1 mb-2">待生成的文案内容</label>
+                        <textarea id="genText" class="w-full bg-[#F5F5F7] border-none rounded-2xl p-4 text-sm focus:ring-1 focus:ring-blue-500" 
+                                  rows="8" placeholder="在此输入您想要合成的文本内容..."></textarea>
+                    </div>
+                    <div class="flex justify-center">
+                        <button onclick="doGenerate()" id="btn" class="w-3/4 btn-gradient text-white font-bold py-3.5 rounded-xl shadow-lg flex items-center justify-center space-x-2">
+                            <span>立即生成音频</span>
+                            <i class="fa-solid fa-play text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 结果区域 - 初始隐藏 -->
+                <div id="result" class="hidden mt-8 pt-6 border-t border-[#F5F5F7]">
+                    <!-- 状态栏：合成成功 + 下载按钮（初始隐藏） -->
+                    <div class="flex items-center justify-between mb-3">
+                        <p id="successText" class="text-[10px] font-bold text-blue-600 uppercase flex items-center" style="display: none;">
+                            <span class="flex h-1.5 w-1.5 rounded-full bg-blue-500 mr-2"></span> 合成成功
+                        </p>
+                        <button onclick="downloadAudio()" id="downloadBtn" class="text-[10px] font-bold text-slate-500 hover:text-blue-600 uppercase transition-colors flex items-center" style="display: none;">
+                            <i class="fa-solid fa-download mr-1"></i> 下载音频
+                        </button>
+                </div>
+    
+                <!-- 音频播放器 - 初始禁用 -->
+                <div class="bg-gray-100 rounded-xl p-3">
+                    <audio id="player" controls class="w-full h-10 [&::-webkit-media-controls-panel]:bg-gray-200" disabled>
+                        您的浏览器不支持音频播放
+                    </audio>
+                </div>
+            </div>
+
+    <script>
+    // 全局配置
+    let config = {};
+    let currentMode = 'Pro-Custom';
+    let currentSeed = -1;  // 当前使用的种子，-1表示随机
+
+    // ✅ 初始化：从后端获取配置数据
+    async function init() {
+        try {
+            const res = await fetch('/api/config');
+            config = await res.json();
+            
+            // 填充语言选项
+            const langSel = document.getElementById('language');
+            config.languages.forEach(lang => {
+                const opt = document.createElement('option');
+                opt.value = lang;
+                opt.innerText = lang;
+                langSel.appendChild(opt);
+            });
+            
+            // 填充情感选项
+            const emoSel = document.getElementById('emotion');
+            config.emotions.forEach(emo => {
+                const opt = document.createElement('option');
+                opt.value = emo;
+                opt.innerText = emo;
+                emoSel.appendChild(opt);
+            });
+            
+            // 初始化角色列表
+            updateSpeakers();
+            
+            // ✅ 速度滑杆初始化（放在 try 内部）
+            const speedControl = document.getElementById('speedControl');
+            if (speedControl) {
+                speedControl.style.display = (currentMode === 'Pro-Clone') ? 'block' : 'none';
+            }
+            
+        } catch(e) {
+            console.error('配置加载失败:', e);
+            alert("无法连接后端服务，请确保 main.py 已启动");
+        }
+    }  // ✅ init 函数在这里正确结束
+
+    // ✅ 切换顶部三个主功能板块（独立函数，全局可调用）
+    function switchMode(mode) {
+        currentMode = mode;
+        
+        // 1. 更新按钮状态
+        document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(`mode-${mode.split('-')[1].toLowerCase()}`).classList.add('active');
+        
+        // 2. 切换左侧内容区域显示/隐藏
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.getElementById(`tab-${mode.split('-')[1].toLowerCase()}`).classList.add('active');
+        
+        // 3. 根据模式显示/隐藏速度滑杆
+        const speedControl = document.getElementById('speedControl');
+        if (speedControl) {
+            if (mode === 'Pro-Clone') {
+                speedControl.style.display = 'none'; // 将block修改为none，暂时隐藏起来，因为目前实际测试语速调节并没有真正起到作用
+            } else {
+                speedControl.style.display = 'none';
+            }
+        }
+    }
+
+    // ✅ 更新角色列表 (语言联动)
+    function updateSpeakers() {
+        const lang = document.getElementById('language').value;
+        const spkSel = document.getElementById('speaker');
+        spkSel.innerHTML = '';
+        
+        const speakers = config.speakers[lang] || [];
+        speakers.forEach(spk => {
+            const opt = document.createElement('option');
+            opt.value = spk;
+            opt.innerText = spk;
+            spkSel.appendChild(opt);
+        });
+    }
+
+    // ✅ 参考音频上传与识别
+    const refFile = document.getElementById('refFile');
+    refFile.onchange = async () => {
+        if(!refFile.files[0]) return;
+        const file = refFile.files[0];
+        document.getElementById('fileNameDisplay').innerText = "✅ " + file.name;
+        
+        const url = URL.createObjectURL(file);
+        document.getElementById('refAudioPlayer').src = url;
+        document.getElementById('refPlayerContainer').classList.remove('hidden');
+        
+        document.getElementById('refText').value = "正在识别中...";
+        
+        const fd = new FormData();
+        fd.append('reference_audio', file);
+        
+        try {
+            const res = await fetch('/api/transcribe', {method:'POST', body:fd});
+            const data = await res.json();
+            document.getElementById('refText').value = data.text || "";
+        } catch(e) {
+            document.getElementById('refText').value = "识别失败";
+        }
+    };
+
+    // ✅ 生成随机种子
+    function randomizeSeed() {
+        const newSeed = Math.floor(Math.random() * (2**32));
+        currentSeed = newSeed;
+        document.getElementById('seed').value = newSeed;
+        doGenerate();
+    }
+    
+    // 全局变量存储音频 Blob
+    let currentAudioBlob = null;
+    let currentAudioFilename = 'audio.wav';
+
+    // ✅ 下载音频功能
+    function downloadAudio() {
+        if (!currentAudioBlob) {
+            alert("暂无可下载的音频");
+            return;
+        }
+    
+        // 创建下载链接
+        const url = URL.createObjectURL(currentAudioBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = currentAudioFilename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    // ✅ 生成音频 - 正确顺序版本
+    async function doGenerate() {
+        const btn = document.getElementById('btn');
+        const genText = document.getElementById('genText').value;
+    
+        // 1. 先验证输入
+        if(!genText) return alert("请输入需要合成的文本内容");
+        
+        // ✅ 新增：前端种子重复检测提示（可选，增强用户体验）
+        const lastSeed = localStorage.getItem('last_seed');
+        const lastParams = localStorage.getItem('last_params');
+        const currentParams = `${genText}|${currentMode}|${document.getElementById('language').value}`;
+        
+        if (currentSeed !== -1 && currentSeed == lastSeed && lastParams === currentParams) {
+            if (!confirm('⚠️ 检测到相同种子 + 相同参数，将生成完全相同的音频！\n\n点击"确定"继续生成，或点击"取消"使用新随机种子。')) {
+                // 用户选择取消，自动切换到新随机种子并生成
+                const newSeed = Math.floor(Math.random() * (2**32));
+                currentSeed = newSeed;
+                document.getElementById('seed').value = newSeed;
+            }
+        }
+        // 保存当前参数用于下次检测
+        localStorage.setItem('last_seed', currentSeed);
+        localStorage.setItem('last_params', currentParams);
+    
+        // 2. 更新按钮状态
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> 正在生成...';
+    
+        // 3. 处理种子逻辑
+        if (currentSeed === -1) {
+            randomizeSeed();
+        }
+    
+        // 4. 构建 FormData（在请求之前）
+        const fd = new FormData();
+        fd.append('text', genText);
+        fd.append('mode', currentMode);
+        fd.append('language', document.getElementById('language').value); 
+        fd.append('seed', currentSeed);
+    
+        if(currentMode === 'Pro-Custom') {
+            fd.append('speaker', document.getElementById('speaker').value);
+            fd.append('emotion', document.getElementById('emotion').value);
+        } else if(currentMode === 'Pro-Design') {
+            fd.append('design_text', document.getElementById('designText').value);
+        } else if(currentMode === 'Pro-Clone') {
+            fd.append('prompt_text', document.getElementById('refText').value);
+            if(refFile.files[0]) fd.append('reference_audio', refFile.files[0]);
+            fd.append('speed', document.getElementById('speed').value);
+        }
+    
+        // 5. 发起请求（只一次）
+        try {
+            const res = await fetch('/api/generate', {method:'POST', body:fd});
+        
+            if(!res.ok) throw new Error(await res.text());
+        
+            // 6. 处理响应
+            const blob = await res.blob();
+            currentAudioBlob = blob;  // ✅ 保存用于下载
+        
+            const actualSeed = res.headers.get('X-Actual-Seed') || Date.now();
+            currentAudioFilename = `audio_seed_${actualSeed}.wav`;
+            // 🔧 显示结果区域
+            document.getElementById('result').classList.remove('hidden');
+            // 🔧 显示"合成成功"文字和下载按钮
+            document.getElementById('successText').style.display = 'flex';
+            document.getElementById('downloadBtn').style.display = 'flex';
+            // 🔧 启用并播放音频
+            const player = document.getElementById('player');
+            player.src = URL.createObjectURL(blob);
+            player.disabled = false;  // ✅ 启用播放器
+            player.load();
+            player.play().catch(e => console.log("自动播放权限受限"));
+        
+        } catch(e) {
+            alert("生成失败：" + e.message);
+        } finally {
+            // 7. 恢复按钮状态
+            btn.disabled = false;
+            btn.innerHTML = '<span>立即生成音频</span><i class="fa-solid fa-play text-xs ml-2"></i>';
+        }
+    }
+
+    // ✅ 页面加载完成后初始化
+    init();
+</script>
+    <!-- 固定底部信息栏 -->
+    <div class="fixed bottom-4 left-0 right-0 text-center pointer-events-none">
+        <span class="text-[10px] text-slate-400 pointer-events-auto">
+            MPS Accelerated | Auto Memory Cleanup | Rayen21 |
+            <a href="https://github.com/Rayen21/qwen3-TTS-Mac" target="_blank" class="text-blue-500 hover:underline pointer-events-auto">GitHub</a>
+        </span>
+    </div>
+</body>
+</html>
