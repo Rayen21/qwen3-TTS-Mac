@@ -1,5 +1,0 @@
-mlx-audio
-gradio
-numpy
-soundfile
-mlx_whisper
