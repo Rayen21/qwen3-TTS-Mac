@@ -199,7 +199,7 @@ def split_text_for_tts(text: str, max_chars: int = 80) -> list:
     current = ""
     for char in text:
         current += char
-        if char in '。！？!?；;':
+        if char in '。！？!?；;.':
             if len(current.strip()) > 0:
                 segments.append(current.strip())
                 current = ""
