@@ -175,20 +175,30 @@ def _transcribe_audio(audio_path: str) -> str:
     """使用 Whisper 识别文本"""
     if not audio_path or not os.path.exists(audio_path):
         return ""
+        
+    model_dir = os.path.join(MODELS_DIR, "whisper-large-v3-turbo-asr-fp16")
+    if not os.path.exists(model_dir):
+        print("⚠️ 请手动下载whisper-large-v3-turbo-asr-fp16到项目models目录")
+        return ""
+    # 取消自动下载到缓存目录，改成提示用户手动下载到项目models目录下
+        #result = generate_transcription(
+        #    model="mlx-community/whisper-large-v3-turbo-asr-fp16",
+        #    audio=audio_path,  
+        #    language=None  
+        #)
+        #text = result.text.strip()
+        #_clear_mps_cache()
+        #return text
+    # 取消自动下载到缓存目录，改成提示用户手动下载到项目models目录下    
     try:
         print(f"🎙️ Whisper 正在自动识别：{os.path.basename(audio_path)}")
         from mlx_audio.stt.generate import generate_transcription
-        result = generate_transcription(
-            model="mlx-community/whisper-large-v3-turbo-asr-fp16",
-            audio=audio_path,
-            language=None
-        )
-        text = result.text.strip()
-        _clear_mps_cache()
-        return text
+        return generate_transcription(model=model_dir, audio=audio_path, language=None).text.strip()   
     except Exception as e:
         print(f"⚠️ Whisper 识别失败：{e}")
+        _clear_mps_cache()
         return ""
+    # 取消自动下载到缓存目录，改成提示用户手动下载到项目models目录下
 
 # ✅ 新增：文本分段函数（放在全局，避免在 if 块内定义）
 def split_text_for_tts(text: str, max_chars: int = 80) -> list:
