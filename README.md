@@ -2,6 +2,10 @@
 
 ### 使用mlx-community模型，MPS加速，生成速度快，占用内存小，一键启动（qwen3-tts.sh脚本）
 
+
+### 20260616代码优化+深夜模式UI更新：
+<img width="1185" height="693" alt="image" src="https://github.com/user-attachments/assets/dc7aad4b-84d4-44d7-bf28-522bd4b43979" />
+
 ### 20260311功能更新：
 1、美化UI界面（抛弃gradio使用index）
 
