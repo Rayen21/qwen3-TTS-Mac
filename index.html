@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qwen3-TTS (MPS Optimized)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* ===== 白天主题（默认） ===== */
+        body {
+            background-color: #F5F5F7;
+            color: #1D1D1F;
+            transition: background-color 0.4s ease, color 0.4s ease;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            border: 1px solid white;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.05);
+            transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+        }
+        .btn-gradient {
+            background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+            transition: all 0.3s ease;
+        }
+        .btn-gradient:hover {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+        .btn-gradient:active { transform: translateY(0) scale(0.98); }
+        .mode-btn.active {
+            background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+            color: white;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #2563eb;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        /* ===== 夜晚主题 ===== */
+        body.dark {
+            background-color: #1C1C1E;
+            color: #E5E5EA;
+        }
+        body.dark .glass-card {
+            background: rgba(44, 44, 46, 0.85);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(84, 84, 88, 0.4);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+        body.dark .mode-btn:not(.active) {
+            background: rgba(60, 60, 62, 0.6);
+            color: #AEAEB2;
+        }
+        body.dark .mode-btn:not(.active):hover {
+            background: rgba(84, 84, 88, 0.6);
+            color: #E5E5EA;
+        }
+        body.dark select,
+        body.dark textarea,
+        body.dark input[type="number"],
+        body.dark input[type="text"] {
+            background: rgba(58, 58, 60, 0.8) !important;
+            color: #E5E5EA !important;
+            border: 1px solid rgba(84, 84, 88, 0.5) !important;
+        }
+        body.dark select:focus,
+        body.dark textarea:focus,
+        body.dark input:focus {
+            border-color: #054280 !important;
+            box-shadow: 0 0 0 1px #054280 !important;
+        }
+        body.dark ::placeholder {
+            color: #636366 !important;
+        }
+        body.dark .text-slate-400 { color: #636366 !important; }
+        body.dark .text-slate-600 { color: #8E8E93 !important; }
+        body.dark .text-slate-800 { color: #E5E5EA !important; }
+        body.dark .text-\[\#86868B\] { color: #636366 !important; }
+        body.dark .text-\[\#D2D2D7\] { color: #48484A !important; }
+        body.dark .border-\[\#D2D2D7\] { border-color: #48484A !important; }
+        body.dark .border-\[\#F5F5F7\] { border-color: #2C2C2E !important; }
+        body.dark .bg-\[\#F5F5F7\] { background-color: #2C2C2E !important; }
+        body.dark .bg-\[\#FBFBFD\] { background-color: #1C1C1E !important; }
+        body.dark .bg-\[\#E5E5EA\] { background-color: #48484A !important; }
+        body.dark .bg-\[\#E5E5EA\]:hover { background-color: #636366 !important; }
+        body.dark .bg-gray-100 { background-color: #2C2C2E !important; }
+        body.dark .bg-gray-200 { background-color: #3A3A3C !important; }
+        body.dark .text-slate-500 { color: #636366 !important; }
+        body.dark .text-slate-500:hover { color: #0A84FF !important; }
+        body.dark .text-blue-600 { color: #0A84FF !important; }
+        body.dark .text-blue-500 { color: #0A84FF !important; }
+        body.dark .text-blue-500:hover { color: #40A9FF !important; }
+        body.dark .text-slate-800 { color: #E5E5EA !important; }
+        body.dark audio::-webkit-media-controls-panel {
+            background-color: #2C2C2E;
+        }
+        body.dark audio::-webkit-media-controls-play-button {
+            filter: invert(1);
+        }
+        body.dark #dropZone {
+            background: rgba(28, 28, 30, 0.6);
+        }
+        body.dark #dropZone:hover {
+            border-color: #0A84FF !important;
+        }
+        body.dark #dropZone .fa-cloud-arrow-up {
+            color: #48484A;
+        }
+        body.dark #dropZone:hover .fa-cloud-arrow-up {
+            color: #0A84FF;
+        }
+
+        /* ===== 主题切换按钮 ===== */
+        .theme-toggle {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            transition: all 0.3s ease;
+            background: rgba(255,255,255,0.7);
+            color: #1D1D1F;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .theme-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        }
+        body.dark .theme-toggle {
+            background: rgba(60,60,62,0.8);
+            color: #FFD60A;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        body.dark .theme-toggle:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+
+        /* ===== 过渡动画 ===== */
+        *, *::before, *::after {
+            transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+        }
+        .no-transition {
+            transition: none !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8 font-sans">
+    <div class="max-w-6xl mx-auto space-y-6">
+
+        <!-- 顶部标题 -->
+        <div class="flex items-center justify-between px-4">
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight">Qwen3-TTS <span class="text-slate-400 font-light">(MPS Optimized)</span></h1>
+                <p class="text-[10px] font-bold text-blue-500 uppercase tracking-widest mt-1">
+                    <span class="inline-block w-2 h-2 rounded-full bg-blue-500 animate-pulse mr-1"></span>
+                    Apple MPS Engine Active
+                </p>
+            </div>
+            <div class="flex items-center gap-3">
+                <!-- 主题切换按钮 -->
+                <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换日夜主题">
+                    <i class="fa-solid fa-moon" id="themeIcon"></i>
+                </button>
+                <div class="text-right hidden md:block">
+                    <span class="text-xs text-slate-400 font-medium">Local Inference Mode</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 模式选择 -->
+        <div class="glass-card p-4 rounded-2xl">
+            <div class="flex space-x-2 justify-center">
+                <button onclick="switchMode('Pro-Custom')" id="mode-custom" class="mode-btn active px-6 py-2 rounded-xl text-sm font-medium transition-all">
+                    <i class="fa-solid fa-user mr-2"></i>官方角色
+                </button>
+                <button onclick="switchMode('Pro-Design')" id="mode-design" class="mode-btn px-6 py-2 rounded-xl text-sm font-medium transition-all">
+                    <i class="fa-solid fa-wand-magic-sparkles mr-2"></i>语音设计
+                </button>
+                <button onclick="switchMode('Pro-Clone')" id="mode-clone" class="mode-btn px-6 py-2 rounded-xl text-sm font-medium transition-all">
+                    <i class="fa-solid fa-microphone-lines mr-2"></i>零样本克隆
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <!-- 左侧：控制面板 -->
+            <div class="glass-card p-8 rounded-[2rem] space-y-6">
+                <h2 class="text-sm font-bold text-slate-800 flex items-center">
+                    <i class="fa-solid fa-sliders mr-2 text-blue-500"></i> 合成参数配置
+                </h2>
+
+                <!-- 模式 1: 官方角色 -->
+                <div id="tab-custom" class="tab-content active space-y-4">
+                    <div>
+                        <label class="block text-[11px] font-black text-[#86868B] uppercase ml-1 mb-2">语言</label>
+                        <select id="language" class="w-full bg-[#F5F5F7] border-none rounded-xl p-3 text-sm focus:ring-1 focus:ring-blue-500" onchange="updateSpeakers()">
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-black text-[#86868B] uppercase ml-1 mb-2">角色</label>
+                        <select id="speaker" class="w-full bg-[#F5F5F7] border-none rounded-xl p-3 text-sm focus:ring-1 focus:ring-blue-500">
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-black text-[#86868B] uppercase ml-1 mb-2">情感描述</label>
+                        <textarea id="emotion" class="w-full bg-[#F5F5F7] border-none rounded-xl p-4 text-sm focus:ring-1 focus:ring-blue-500"
+                                  rows="3" placeholder="例：用开心的语气说 / 低沉缓慢地讲述 / 带着悲伤的情绪..."></textarea>
+                    </div>
+                </div>
+
+                <!-- 模式 2: 语音设计 -->
+                <div id="tab-design" class="tab-content space-y-4">
+                    <div>
+                        <label class="block text-[11px] font-black text-[#86868B] uppercase ml-1 mb-2">声音描述</label>
+                        <textarea id="designText" class="w-full bg-[#F5F5F7] border-none rounded-xl p-4 text-sm focus:ring-1 focus:ring-blue-500"
+                                  rows="4" placeholder="例：磁性男声，略带沙哑，语速缓慢..."></textarea>
+                    </div>
+                </div>
+
+                <!-- 模式 3: 零样本克隆 -->
+                <div id="tab-clone" class="tab-content space-y-4">
+                    <div id="dropZone" class="group relative border-2 border-dashed border-[#D2D2D7] hover:border-blue-500 rounded-2xl p-6 transition-all bg-[#FBFBFD] text-center">
+                        <input type="file" id="refFile" accept=".wav,.mp3,.m4a" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                        <div class="space-y-2">
+                            <i class="fa-solid fa-cloud-arrow-up text-2xl text-[#D2D2D7] group-hover:text-blue-500"></i>
+                            <p class="text-sm font-medium text-slate-600" id="fileNameDisplay">点击或拖拽参考音频到这里</p>
+                        </div>
+                        <div id="refPlayerContainer" class="hidden mt-4 pt-4 border-t border-[#F5F5F7]">
+                            <p class="text-[10px] font-bold text-[#86868B] uppercase mb-2">参考音预览</p>
+                            <audio id="refAudioPlayer" controls class="w-full h-8"></audio>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-black text-[#86868B] uppercase ml-1 mb-2">参考文本 (自动识别/可修正)</label>
+                        <textarea id="refText" class="w-full bg-[#F5F5F7] border-none rounded-xl p-4 text-sm focus:ring-1 focus:ring-blue-500" rows="3" placeholder="上传音频后自动识别..."></textarea>
+                    </div>
+                </div>
+
+                <!-- 随机种子 -->
+                <div>
+                    <label class="block text-[11px] font-black text-[#86868B] uppercase ml-1 mb-2">种子</label>
+                    <div class="flex space-x-2">
+                        <input type="number" id="seed" value="-1" class="flex-1 bg-[#F5F5F7] border-none rounded-xl p-3 text-sm focus:ring-1 focus:ring-blue-500">
+                        <button onclick="randomizeSeed()" class="px-4 py-3 bg-[#E5E5EA] hover:bg-[#D2D2D7] rounded-xl text-sm font-medium transition-all">
+                            <i class="fa-solid fa-shuffle mr-1"></i>随机种子
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧：文本输入与输出 -->
+            <div class="glass-card p-8 rounded-[2rem] flex flex-col justify-between">
+                <div class="space-y-6">
+                    <h2 class="text-sm font-bold text-slate-800 flex items-center">
+                        <i class="fa-solid fa-font mr-2 text-blue-500"></i> 合成内容成果
+                    </h2>
+                    <div>
+                        <label class="block text-[11px] font-black text-[#86868B] uppercase ml-1 mb-2">待生成的文案内容</label>
+                        <textarea id="genText" class="w-full bg-[#F5F5F7] border-none rounded-2xl p-4 text-sm focus:ring-1 focus:ring-blue-500"
+                                  rows="8" placeholder="在此输入您想要合成的文本内容..."></textarea>
+                    </div>
+                    <div class="flex justify-center">
+                        <button onclick="doGenerate()" id="btn" class="w-3/4 btn-gradient text-white font-bold py-3.5 rounded-xl shadow-lg flex items-center justify-center space-x-2">
+                            <span>立即生成音频</span>
+                            <i class="fa-solid fa-play text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 结果区域 - 初始隐藏 -->
+                <div id="result" class="hidden mt-8 pt-6 border-t border-[#F5F5F7]">
+                    <div class="flex items-center justify-between mb-3">
+                        <p id="successText" class="text-[10px] font-bold text-blue-600 uppercase flex items-center" style="display: none;">
+                            <span class="flex h-1.5 w-1.5 rounded-full bg-blue-500 mr-2"></span> 合成成功
+                        </p>
+                        <button onclick="downloadAudio()" id="downloadBtn" class="text-[10px] font-bold text-slate-500 hover:text-blue-600 uppercase transition-colors flex items-center" style="display: none;">
+                            <i class="fa-solid fa-download mr-1"></i> 下载音频
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 音频播放器 -->
+                <div class="bg-gray-100 rounded-xl p-3">
+                    <audio id="player" controls class="w-full h-10 [&::-webkit-media-controls-panel]:bg-gray-200" disabled>
+                        您的浏览器不支持音频播放
+                    </audio>
+                </div>
+
+                <!-- 底部信息栏 -->
+                <div class="text-center mt-2">
+                    <span class="text-[10px] text-slate-400">
+                        MPS Accelerated | Auto Memory Cleanup | Rayen21 |
+                        <a href="https://github.com/Rayen21/qwen3-TTS-Mac" target="_blank" class="text-blue-500 hover:underline">GitHub</a>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // 全局配置
+    let config = {};
+    let currentMode = 'Pro-Custom';
+    let currentSeed = -1;
+
+    // ===== 主题切换 =====
+    function toggleTheme() {
+        const body = document.body;
+        const icon = document.getElementById('themeIcon');
+        body.classList.toggle('dark');
+        const isDark = body.classList.contains('dark');
+        // 保存偏好
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        // 切换图标
+        icon.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+    }
+
+    // 页面加载时恢复主题偏好
+    (function() {
+        const saved = localStorage.getItem('theme');
+        const icon = document.getElementById('themeIcon');
+        if (saved === 'dark') {
+            document.body.classList.add('dark');
+            if (icon) icon.className = 'fa-solid fa-sun';
+        }
+    })();
+
+    // ✅ 初始化：从后端获取配置数据
+    async function init() {
+        try {
+            const res = await fetch('/api/config');
+            config = await res.json();
+
+            // 填充语言选项
+            const langSel = document.getElementById('language');
+            config.languages.forEach(lang => {
+                const opt = document.createElement('option');
+                opt.value = lang;
+                opt.innerText = lang;
+                langSel.appendChild(opt);
+            });
+
+            // 初始化角色列表
+            updateSpeakers();
+
+        } catch(e) {
+            console.error('配置加载失败:', e);
+            alert("无法连接后端服务，请确保 main.py 已启动");
+        }
+    }
+
+    // ✅ 切换顶部三个主功能板块
+    function switchMode(mode) {
+        currentMode = mode;
+
+        // 1. 更新按钮状态
+        document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(`mode-${mode.split('-')[1].toLowerCase()}`).classList.add('active');
+
+        // 2. 切换左侧内容区域显示/隐藏
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.getElementById(`tab-${mode.split('-')[1].toLowerCase()}`).classList.add('active');
+    }
+
+    // ✅ 更新角色列表 (语言联动)
+    function updateSpeakers() {
+        const lang = document.getElementById('language').value;
+        const spkSel = document.getElementById('speaker');
+        spkSel.innerHTML = '';
+
+        const speakers = config.speakers[lang] || [];
+        speakers.forEach(spk => {
+            const opt = document.createElement('option');
+            opt.value = spk;
+            opt.innerText = spk;
+            spkSel.appendChild(opt);
+        });
+    }
+
+    // ✅ 参考音频上传与识别
+    const refFile = document.getElementById('refFile');
+    refFile.onchange = async () => {
+        if(!refFile.files[0]) return;
+        const file = refFile.files[0];
+        document.getElementById('fileNameDisplay').innerText = "✅ " + file.name;
+
+        const url = URL.createObjectURL(file);
+        document.getElementById('refAudioPlayer').src = url;
+        document.getElementById('refPlayerContainer').classList.remove('hidden');
+
+        document.getElementById('refText').value = "正在识别中...";
+
+        const fd = new FormData();
+        fd.append('reference_audio', file);
+
+        try {
+            const res = await fetch('/api/transcribe', {method:'POST', body:fd});
+            const data = await res.json();
+            document.getElementById('refText').value = data.text || "";
+        } catch(e) {
+            document.getElementById('refText').value = "识别失败";
+        }
+    };
+
+    // ✅ 生成随机种子（点击即生成新种子并立即触发合成）
+    function randomizeSeed() {
+        const newSeed = Math.floor(Math.random() * (2**32));
+        currentSeed = newSeed;
+        document.getElementById('seed').value = newSeed;
+        doGenerate();
+    }
+
+    // 全局变量存储音频 Blob
+    let currentAudioBlob = null;
+    let currentAudioFilename = 'audio.wav';
+
+    // ✅ 下载音频功能
+    function downloadAudio() {
+        if (!currentAudioBlob) {
+            alert("暂无可下载的音频");
+            return;
+        }
+
+        const url = URL.createObjectURL(currentAudioBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = currentAudioFilename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    // ✅ 生成音频
+    async function doGenerate() {
+        const btn = document.getElementById('btn');
+        const genText = document.getElementById('genText').value;
+
+        // 1. 先验证输入
+        if(!genText) return alert("请输入需要合成的文本内容");
+
+        // ✅ 前端种子重复检测提示
+        const lastSeed = localStorage.getItem('last_seed');
+        const lastParams = localStorage.getItem('last_params');
+        const currentParams = `${genText}|${currentMode}|${document.getElementById('language').value}`;
+
+        if (currentSeed !== -1 && currentSeed == lastSeed && lastParams === currentParams) {
+            if (!confirm('⚠️ 检测到相同种子 + 相同参数，将生成完全相同的音频！\n\n点击"确定"继续生成，或点击"取消"使用新随机种子。')) {
+                const newSeed = Math.floor(Math.random() * (2**32));
+                currentSeed = newSeed;
+                document.getElementById('seed').value = newSeed;
+            }
+        }
+        localStorage.setItem('last_seed', currentSeed);
+        localStorage.setItem('last_params', currentParams);
+
+        // 2. 更新按钮状态
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> 正在生成...';
+
+        // 3. 处理种子逻辑
+        if (currentSeed === -1) {
+            randomizeSeed();
+        }
+
+        // 4. 构建 FormData
+        const fd = new FormData();
+        fd.append('text', genText);
+        fd.append('mode', currentMode);
+        fd.append('language', document.getElementById('language').value);
+        fd.append('seed', currentSeed);
+
+        if(currentMode === 'Pro-Custom') {
+            fd.append('speaker', document.getElementById('speaker').value);
+            fd.append('emotion', document.getElementById('emotion').value);
+        } else if(currentMode === 'Pro-Design') {
+            fd.append('design_text', document.getElementById('designText').value);
+        } else if(currentMode === 'Pro-Clone') {
+            fd.append('prompt_text', document.getElementById('refText').value);
+            if(refFile.files[0]) fd.append('reference_audio', refFile.files[0]);
+        }
+
+        // 5. 发起请求
+        try {
+            const res = await fetch('/api/generate', {method:'POST', body:fd});
+
+            if(!res.ok) throw new Error(await res.text());
+
+            // 6. 处理响应
+            const blob = await res.blob();
+            currentAudioBlob = blob;
+
+            const actualSeed = res.headers.get('X-Actual-Seed') || Date.now();
+            currentAudioFilename = `audio_seed_${actualSeed}.wav`;
+
+            // 显示结果区域
+            document.getElementById('result').classList.remove('hidden');
+            document.getElementById('successText').style.display = 'flex';
+            document.getElementById('downloadBtn').style.display = 'flex';
+
+            // 启用并播放音频
+            const player = document.getElementById('player');
+            player.src = URL.createObjectURL(blob);
+            player.disabled = false;
+            player.load();
+            player.play().catch(e => console.log("自动播放权限受限"));
+
+        } catch(e) {
+            alert("生成失败：" + e.message);
+        } finally {
+            // 7. 恢复按钮状态
+            btn.disabled = false;
+            btn.innerHTML = '<span>立即生成音频</span><i class="fa-solid fa-play text-xs ml-2"></i>';
+        }
+    }
+
+    // ✅ 页面加载完成后初始化
+    init();
+</script>
+</body>
+</html>
